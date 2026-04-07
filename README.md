@@ -1,3 +1,11 @@
+---
+title: Sql Debug Env
+emoji: 🛠️
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
 # SQLDebugEnv
 
 An OpenEnv-compatible environment for debugging SQL queries against a deterministic seeded SQLite database.

@@ -1,0 +1,33 @@
+name: SQLDebugEnv
+description: OpenEnv environment for debugging SQL queries against a seeded SQLite database.
+version: 0.1.0
+entrypoint: server.app:app
+
+runtime:
+  type: docker
+  dockerfile: Dockerfile
+
+server:
+  framework: fastapi
+  host: 0.0.0.0
+  port: 7860
+  healthcheck: /health
+
+environment:
+  observation_model: env.models.Observation
+  action_model: env.models.Action
+  state_model: env.models.State
+  reset_endpoint:
+    method: POST
+    path: /reset
+  step_endpoint:
+    method: POST
+    path: /step
+  state_endpoint:
+    method: GET
+    path: /state
+
+tasks:
+  - easy
+  - medium
+  - hard

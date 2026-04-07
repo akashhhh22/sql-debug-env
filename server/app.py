@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
@@ -27,16 +28,14 @@ class StepResponse(BaseModel):
     info: dict[str, Any]
 
 
-@app.get("/health")
-def healthcheck() -> dict[str, str]:
-    """Return a simple health status."""
-    return {"status": "ok"}
-
-
 @app.get("/")
 def root() -> dict[str, str]:
-    """Root endpoint."""
     return {"status": "ok", "env": "SQLDebugEnv"}
+
+
+@app.get("/health")
+def healthcheck() -> dict[str, str]:
+    return {"status": "ok"}
 
 
 @app.post("/reset", response_model=Observation)
@@ -63,5 +62,13 @@ def step_environment(action: Action) -> StepResponse:
 
 @app.get("/state", response_model=State)
 def get_state() -> State:
-    """Return the current environment state."""
     return environment.state()
+
+
+def main() -> None:
+    """Entry point for the server."""
+    uvicorn.run("server.app:app", host="0.0.0.0", port=8000, reload=False)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,3 +1,12 @@
+---
+title: SQLDebugEnv
+emoji: 🛠️
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # SQLDebugEnv 🛠️
 
 An OpenEnv-style reinforcement-learning environment for debugging SQL queries

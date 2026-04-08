@@ -1,18 +1,23 @@
-FROM python:3.11-slim
+FROM python:3.10-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy entire repo so env/, grader/, tasks/, server/ are all available
+COPY . /app
 
-COPY . .
+RUN pip install --no-cache-dir \
+    fastapi==0.115.12 \
+    uvicorn[standard]==0.34.2 \
+    pydantic==2.11.4 \
+    "openai>=2.7.2" \
+    httpx==0.28.1 \
+    python-dotenv \
+    requests \
+    "openenv-core>=0.2.0"
 
-EXPOSE 7860
+EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:7860/health')"
-
-CMD ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "8000"]

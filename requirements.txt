@@ -1,8 +1,8 @@
-fastapi==0.115.12
-uvicorn[standard]==0.34.2
-pydantic==2.11.4
-openai>=2.7.2
-httpx==0.28.1
-python-dotenv
 requests
+websockets
+openai>=1.0.0
+pydantic>=2.0.0
+fastapi
+uvicorn[standard]
+python-dotenv
 openenv-core>=0.2.0

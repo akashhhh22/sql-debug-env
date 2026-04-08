@@ -1,47 +1,14 @@
-# ── Python cache ──────────────────────────────────────
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
-*.pyd
-*.pycache
-
-# ── Virtual environments ───────────────────────────────
-.venv/
-venv/
-env/bin/
-env/lib/
-env/include/
-
-# ── Secrets & local config ─────────────────────────────
 .env
-*.env.local
-*.env.*.local
-
-# ── OS junk ───────────────────────────────────────────
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# ── IDE / editor ──────────────────────────────────────
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# ── Logs & temp ───────────────────────────────────────
-*.log
-*.tmp
-*.bak
-
-# ── SQLite databases (local only) ─────────────────────
+.venv
+venv/
 *.sqlite3
 *.db
-
-# ── Docker ────────────────────────────────────────────
-.dockerignore
-
-# ── Test artifacts ────────────────────────────────────
+.DS_Store
+result.json
+dist/
+build/
+*.egg-info/
 .pytest_cache/
-.coverage
-htmlcov/

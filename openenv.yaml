@@ -1,6 +1,8 @@
 name: SQLDebugEnv
-description: OpenEnv environment for debugging SQL queries against a seeded SQLite database.
-version: 0.1.0
+description: >
+  OpenEnv-compatible environment for debugging SQL queries against
+  a deterministic, seeded SQLite database.
+version: 1.0.0
 entrypoint: server.app:app
 
 runtime:
@@ -14,18 +16,18 @@ server:
   healthcheck: /health
 
 environment:
-  observation_model: env.models.Observation
-  action_model: env.models.Action
-  state_model: env.models.State
+  observation_model: models.Observation
+  action_model:      models.Action
+  state_model:       models.State
   reset_endpoint:
     method: POST
-    path: /reset
+    path:   /reset
   step_endpoint:
     method: POST
-    path: /step
+    path:   /step
   state_endpoint:
     method: GET
-    path: /state
+    path:   /state
 
 tasks:
   - easy

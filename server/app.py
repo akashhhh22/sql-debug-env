@@ -1,73 +1,125 @@
-"""FastAPI server entrypoint for SQLDebugEnv."""
-
+"""server/app.py – FastAPI + WebSocket server for SQLDebugEnv."""
 from __future__ import annotations
 
-from typing import Any, Optional
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import Optional
 
-from env.environment import SQLDebugEnv
-from env.models import Action, Observation, State
+from models import Action, SQLDebugEnv
 
-app = FastAPI(title="SQLDebugEnv API", version="0.1.0")
-environment = SQLDebugEnv()
-
-
-class ResetRequest(BaseModel):
-    """Request body for resetting the environment."""
-    task_name: Optional[str] = Field(default="easy")
+app = FastAPI(title="SQLDebugEnv OpenEnv")
 
 
-class StepResponse(BaseModel):
-    """Typed response returned by the step endpoint."""
-    observation: Observation
-    reward: float
-    done: bool
-    info: dict[str, Any]
+class StepRequest(BaseModel):
+    action_type: Optional[str] = "submit"
+    new_sql:     Optional[str] = None
+    task:        Optional[str] = "easy"
 
+
+# ── HTTP endpoints ─────────────────────────────────────────────────────────────
 
 @app.get("/")
-def root() -> dict[str, str]:
-    return {"status": "ok", "env": "SQLDebugEnv"}
+def root():
+    return {"status": "SQLDebugEnv 🛠️", "tasks": 3, "version": "1.0"}
 
 
 @app.get("/health")
-def healthcheck() -> dict[str, str]:
-    return {"status": "ok"}
+async def health():
+    return {"status": "healthy"}
 
 
-@app.post("/reset", response_model=Observation)
-def reset_environment(request: Optional[ResetRequest] = None) -> Observation:
-    """Reset the environment to the requested task. Body is optional."""
-    try:
-        task = (request.task_name if request and request.task_name else None) or "easy"
-        return environment.reset(task)
-    except ValueError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
+@app.post("/reset")
+async def http_reset(body: dict = {}):
+    task_name = (body or {}).get("task_name", "easy")
+    env = SQLDebugEnv(default_task=task_name)
+    obs = env.reset(task_name)
+    return JSONResponse(content={"observation": obs.model_dump(), "done": False, "reward": 0.0})
 
 
-@app.post("/step", response_model=StepResponse)
-def step_environment(action: Action) -> StepResponse:
-    """Apply an action to the environment."""
-    observation, reward, done, info = environment.step(action)
-    return StepResponse(
-        observation=observation,
-        reward=reward,
-        done=done,
-        info=info,
+@app.post("/step")
+async def http_step(request: StepRequest):
+    task = request.task or "easy"
+    env  = SQLDebugEnv(default_task=task)
+    env.reset(task)
+    action = Action(action_type=request.action_type, new_sql=request.new_sql)
+    obs, reward, done, info = env.step(action)
+    return JSONResponse(
+        content={"observation": obs.model_dump(), "reward": reward, "done": done, "info": info}
     )
 
 
-@app.get("/state", response_model=State)
-def get_state() -> State:
-    return environment.state()
+@app.get("/state")
+async def http_state():
+    env = SQLDebugEnv()
+    s   = env.state()
+    return JSONResponse(content=s.model_dump())
 
+
+# ── WebSocket endpoint ─────────────────────────────────────────────────────────
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    env = SQLDebugEnv()
+    try:
+        while True:
+            data     = await websocket.receive_json()
+            msg_type = data.get("type")
+
+            if msg_type == "reset":
+                task_name = data.get("task_name", "easy")
+                obs = env.reset(task_name)
+                await websocket.send_json(
+                    {"type": "reset", "observation": obs.model_dump(), "done": False, "reward": 0.0}
+                )
+
+            elif msg_type == "step":
+                action = Action(
+                    action_type=data.get("action_type", "submit"),
+                    new_sql=data.get("new_sql"),
+                )
+                obs, reward, done, info = env.step(action)
+                await websocket.send_json(
+                    {
+                        "type":        "step",
+                        "observation": obs.model_dump(),
+                        "reward":      reward,
+                        "done":        done,
+                        "info":        info,
+                    }
+                )
+
+            elif msg_type == "state":
+                await websocket.send_json({"type": "state", "state": env.state().model_dump()})
+
+            elif msg_type == "close":
+                break
+
+            else:
+                await websocket.send_json({"type": "error", "message": f"Unknown type: {msg_type}"})
+
+    except WebSocketDisconnect:
+        pass
+    finally:
+        env.close()
+
+
+# ── Entry point ────────────────────────────────────────────────────────────────
 
 def main() -> None:
-    """Entry point for the server."""
-    uvicorn.run("server.app:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run(
+        "server.app:app",
+        host=os.getenv("HOST",    "0.0.0.0"),
+        port=int(os.getenv("PORT",    "7860")),
+        workers=int(os.getenv("WORKERS", "1")),
+    )
 
 
 if __name__ == "__main__":

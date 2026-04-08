@@ -16,11 +16,22 @@ from models import Action, SQLDebugEnv
 
 app = FastAPI(title="SQLDebugEnv OpenEnv")
 
+# ── Persistent environment instance ────────────────────────────────────────────
+# A single env is shared across HTTP calls so /step sees the state set by /reset.
+_env: SQLDebugEnv | None = None
+
+
+def _get_env() -> SQLDebugEnv:
+    """Return the current env, creating a default one if none exists."""
+    global _env
+    if _env is None:
+        _env = SQLDebugEnv(default_task="easy")
+    return _env
+
 
 class StepRequest(BaseModel):
     action_type: Optional[str] = "submit"
     new_sql:     Optional[str] = None
-    task:        Optional[str] = "easy"
 
 
 # ── HTTP endpoints ─────────────────────────────────────────────────────────────
@@ -37,17 +48,16 @@ async def health():
 
 @app.post("/reset")
 async def http_reset(body: dict = {}):
+    global _env
     task_name = (body or {}).get("task_name", "easy")
-    env = SQLDebugEnv(default_task=task_name)
-    obs = env.reset(task_name)
+    _env = SQLDebugEnv(default_task=task_name)
+    obs = _env.reset(task_name)
     return JSONResponse(content={"observation": obs.model_dump(), "done": False, "reward": 0.0})
 
 
 @app.post("/step")
 async def http_step(request: StepRequest):
-    task = request.task or "easy"
-    env  = SQLDebugEnv(default_task=task)
-    env.reset(task)
+    env = _get_env()
     action = Action(action_type=request.action_type, new_sql=request.new_sql)
     obs, reward, done, info = env.step(action)
     return JSONResponse(
@@ -57,8 +67,8 @@ async def http_step(request: StepRequest):
 
 @app.get("/state")
 async def http_state():
-    env = SQLDebugEnv()
-    s   = env.state()
+    env = _get_env()
+    s = env.state()
     return JSONResponse(content=s.model_dump())
 
 

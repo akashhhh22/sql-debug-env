@@ -8,14 +8,14 @@ version = "0.1.0"
 description = "OpenEnv-compatible environment for debugging SQL queries against a seeded SQLite database."
 requires-python = ">=3.10"
 dependencies = [
-    "fastapi",
-    "uvicorn",
-    "openai",
-    "pydantic",
+    "fastapi==0.115.12",
+    "uvicorn[standard]==0.34.2",
+    "pydantic==2.11.4",
+    "openai==1.78.1",
+    "httpx==0.28.1",
     "python-dotenv",
-    "openenv-core>=0.2.0",
+    "requests",
 ]
-
 [project.scripts]
 server = "server.app:main"
 

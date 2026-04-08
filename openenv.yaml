@@ -30,6 +30,32 @@ environment:
     path:   /state
 
 tasks:
-  - easy
-  - medium
-  - hard
+  - name: easy
+    description: "Fix a syntax error in a simple filtered SELECT query."
+    grader:
+      type: endpoint
+      endpoint:
+        method: POST
+        path: /step
+      field: info.score
+      threshold: 1.0
+
+  - name: medium
+    description: "Fix a logical bug in a status filter for completed orders."
+    grader:
+      type: endpoint
+      endpoint:
+        method: POST
+        path: /step
+      field: info.score
+      threshold: 1.0
+
+  - name: hard
+    description: "Fix a JOIN predicate bug in an aggregated reporting query."
+    grader:
+      type: endpoint
+      endpoint:
+        method: POST
+        path: /step
+      field: info.score
+      threshold: 1.0
